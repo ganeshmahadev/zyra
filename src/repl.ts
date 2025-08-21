@@ -1,6 +1,7 @@
 import * as readline from 'readline';
 import { PromptManager } from './promptManager';
 import { AIClient } from './aiClient';
+import { ToolRegistryImpl } from './tools/registry';
 
 interface CommandHistory {
   commands: string[];
@@ -28,6 +29,9 @@ export async function startRepl(): Promise<void> {
     console.log('   Set ANTHROPIC_API_KEY environment variable to enable AI features\n');
   }
 
+  // Initialize tool registry
+  const toolRegistry = new ToolRegistryImpl();
+
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
@@ -51,7 +55,7 @@ export async function startRepl(): Promise<void> {
     }
 
     if (trimmedInput.startsWith('/')) {
-      await handleReplCommand(trimmedInput, rl, promptManager, aiClient);
+      await handleReplCommand(trimmedInput, rl, promptManager, aiClient, toolRegistry);
     } else {
       // Handle AI interaction
       if (aiClient) {
@@ -80,7 +84,7 @@ export async function startRepl(): Promise<void> {
   });
 }
 
-async function handleReplCommand(command: string, rl: readline.Interface, promptManager: PromptManager, aiClient: AIClient | null): Promise<void> {
+async function handleReplCommand(command: string, rl: readline.Interface, promptManager: PromptManager, aiClient: AIClient | null, toolRegistry: ToolRegistryImpl): Promise<void> {
   const [cmd, ...args] = command.split(' ');
 
   switch (cmd) {
@@ -92,6 +96,7 @@ async function handleReplCommand(command: string, rl: readline.Interface, prompt
       console.log('  /compact  - Compact conversation history');
       console.log('  /history  - Show command history');
       console.log('  /test     - Test AI connection');
+      console.log('  /tools    - List available tools');
       console.log('\nOr just type your question/prompt for AI assistance\n');
       break;
 
@@ -120,9 +125,25 @@ async function handleReplCommand(command: string, rl: readline.Interface, prompt
           console.log('❌ AI connection failed');
         }
       } else {
-        console.log('❌ AI client not available');
-      }
-      break;
+              console.log('❌ AI client not available');
+    }
+    break;
+
+  case '/tools':
+    const tools = toolRegistry.list();
+    if (tools.length === 0) {
+      console.log('No tools available.');
+    } else {
+      console.log('\nAvailable Tools:');
+      tools.forEach(tool => {
+        const params = tool.parameters
+          .map(p => `${p.name}${p.required ? '' : '?'}: ${p.type}`)
+          .join(', ');
+        console.log(`  ${tool.name}(${params}): ${tool.description}`);
+      });
+      console.log('');
+    }
+    break;
 
     case '/history':
       if (commandHistory.commands.length === 0) {
