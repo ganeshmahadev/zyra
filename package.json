@@ -1,0 +1,44 @@
+{
+  "name": "zyra-cli",
+  "version": "1.0.0",
+  "description": "Terminal-based AI coding agent MVP",
+  "main": "dist/index.js",
+  "bin": {
+    "zyra": "./bin/zyra.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node ./bin/zyra.js",
+    "lint": "eslint src/**/*.ts bin/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts bin/**/*.ts --fix",
+    "format": "prettier --write src/**/*.ts bin/**/*.ts",
+    "test": "jest",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "cli",
+    "ai",
+    "coding",
+    "agent",
+    "terminal"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "@typescript-eslint/eslint-plugin": "^8.40.0",
+    "@typescript-eslint/parser": "^8.40.0",
+    "eslint": "^9.33.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.2"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.60.0",
+    "commander": "^14.0.0",
+    "dotenv": "^17.2.1",
+    "enquirer": "^2.4.1"
+  }
+}
