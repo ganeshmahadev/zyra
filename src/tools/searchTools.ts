@@ -1,8 +1,30 @@
+/**
+ * Search Tools for zyra CLI
+ * 
+ * This module provides tools for searching files and content within the file system.
+ * Includes fuzzy file matching and regex-based content search capabilities.
+ */
+
 import { Tool, ToolInput, ToolOutput } from './types';
 import * as fs from 'fs';
 import * as path from 'path';
 import { glob } from 'glob';
 
+/**
+ * Searches for files by name using fuzzy matching
+ * 
+ * This tool provides intelligent file discovery:
+ * - Fuzzy matching for partial file names
+ * - Relevance scoring (exact matches first)
+ * - Configurable result limits
+ * - Ignores common build/dependency directories
+ * 
+ * Features:
+ * - Exact matches get highest priority
+ * - Partial matches are ranked by relevance
+ * - Excludes node_modules, .git, dist, build directories
+ * - Returns file paths and relevance scores
+ */
 export const fileSearchTool: Tool = {
   name: 'fileSearch',
   description: 'Search for files by name using fuzzy matching',
@@ -79,9 +101,25 @@ export const fileSearchTool: Tool = {
   },
 };
 
+/**
+ * Searches for text patterns in files using regular expressions
+ * 
+ * This tool provides powerful content search capabilities:
+ * - Regex pattern matching with case sensitivity options
+ * - File type filtering (e.g., only .ts, .js files)
+ * - Line-by-line search with context
+ * - Configurable result limits
+ * 
+ * Features:
+ * - Supports case-sensitive and case-insensitive search
+ * - Can filter by file extensions
+ * - Returns file path, line number, and matching content
+ * - Handles large files efficiently with result limits
+ * - Gracefully handles unreadable files
+ */
 export const grepSearchTool: Tool = {
   name: 'grepSearch',
-  description: 'Search for text patterns in files using regex',
+  description: 'Search for text patterns in files using regex with file type filtering',
   parameters: [
     {
       name: 'pattern',
@@ -204,6 +242,19 @@ export const grepSearchTool: Tool = {
   },
 };
 
+/**
+ * Calculates relevance score for file search results
+ * 
+ * Scoring algorithm:
+ * - Exact match: 100 points
+ * - Starts with query: 80 points  
+ * - Contains query: 60 points
+ * - Partial character match: 10 points per character
+ * 
+ * @param filename - The filename to score
+ * @param query - The search query
+ * @returns Relevance score (0-100)
+ */
 function calculateRelevance(filename: string, query: string): number {
   const lowerFilename = filename.toLowerCase();
   const lowerQuery = query.toLowerCase();

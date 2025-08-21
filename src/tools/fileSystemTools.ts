@@ -1,7 +1,26 @@
+/**
+ * File System Tools for zyra CLI
+ * 
+ * This module provides tools for interacting with the file system,
+ * including listing directories, reading/writing files, and file management operations.
+ * All tools include proper error handling and security considerations.
+ */
+
 import { Tool, ToolInput, ToolOutput } from './types';
 import * as fs from 'fs';
 import * as path from 'path';
 
+/**
+ * Lists files and directories at the specified path
+ * 
+ * This tool provides a detailed view of directory contents including:
+ * - File and directory names
+ * - File sizes (for files only)
+ * - Last modification times
+ * - File types (file vs directory)
+ * 
+ * Security: Validates path existence and ensures it's a directory
+ */
 export const listDirTool: Tool = {
   name: 'listDir',
   description: 'List files and directories at the given path',
@@ -61,9 +80,21 @@ export const listDirTool: Tool = {
   },
 };
 
+/**
+ * Reads the contents of a file with specified encoding
+ * 
+ * This tool safely reads file contents and provides metadata about the file:
+ * - File content as string
+ * - File size in bytes
+ * - Last modification time
+ * - Resolved file path
+ * 
+ * Security: Validates file existence and ensures it's a regular file
+ * Supports: UTF-8, ASCII, and other text encodings
+ */
 export const readFileTool: Tool = {
   name: 'readFile',
-  description: 'Read the contents of a file',
+  description: 'Read the contents of a file with metadata',
   parameters: [
     {
       name: 'path',
@@ -120,9 +151,21 @@ export const readFileTool: Tool = {
   },
 };
 
+/**
+ * Edits or creates a file with new content
+ * 
+ * This tool provides safe file editing capabilities:
+ * - Creates backup of existing files (optional)
+ * - Ensures directory structure exists
+ * - Overwrites file content completely
+ * - Provides file metadata after operation
+ * 
+ * Security: Creates backups by default, validates paths
+ * Backup: Files are backed up with timestamp before modification
+ */
 export const editFileTool: Tool = {
   name: 'editFile',
-  description: 'Edit or create a file with new content',
+  description: 'Edit or create a file with new content and optional backup',
   parameters: [
     {
       name: 'path',
@@ -183,9 +226,20 @@ export const editFileTool: Tool = {
   },
 };
 
+/**
+ * Deletes a file from the file system
+ * 
+ * This tool provides safe file deletion:
+ * - Validates file existence before deletion
+ * - Ensures target is a regular file (not directory)
+ * - Returns confirmation of successful deletion
+ * 
+ * Security: Validates file type and existence
+ * Warning: This operation is irreversible - no automatic backup
+ */
 export const deleteFileTool: Tool = {
   name: 'deleteFile',
-  description: 'Delete a file',
+  description: 'Delete a file (irreversible operation)',
   parameters: [
     {
       name: 'path',
@@ -232,9 +286,21 @@ export const deleteFileTool: Tool = {
   },
 };
 
+/**
+ * Creates a new file with optional content
+ * 
+ * This tool provides safe file creation:
+ * - Validates that file doesn't already exist
+ * - Creates directory structure if needed
+ * - Supports empty files or files with initial content
+ * - Returns file metadata after creation
+ * 
+ * Security: Prevents overwriting existing files
+ * Directory: Automatically creates parent directories if needed
+ */
 export const createFileTool: Tool = {
   name: 'createFile',
-  description: 'Create a new file with content',
+  description: 'Create a new file with optional content (won\'t overwrite existing)',
   parameters: [
     {
       name: 'path',

@@ -1,6 +1,35 @@
+/**
+ * Terminal Tools for zyra CLI
+ * 
+ * This module provides tools for executing terminal commands safely.
+ * Includes security measures to prevent dangerous operations.
+ */
+
 import { Tool, ToolInput, ToolOutput } from './types';
 import { spawn } from 'child_process';
 
+/**
+ * Executes bash commands in a secure environment
+ * 
+ * This tool provides safe command execution with security features:
+ * - Command validation against banned dangerous operations
+ * - Configurable timeout (default: 120 seconds)
+ * - Working directory specification
+ * - Full stdout/stderr capture
+ * - Environment variable preservation
+ * 
+ * Security Features:
+ * - Blocks dangerous commands (rm -rf /, mkfs, shutdown, etc.)
+ * - Timeout protection against hanging processes
+ * - Isolated process execution
+ * - Environment variable sanitization
+ * 
+ * Banned Commands:
+ * - rm -rf /, rm -rf /*
+ * - dd if=/dev/zero
+ * - mkfs, fdisk, format
+ * - shutdown, reboot, halt, poweroff
+ */
 export const bashTool: Tool = {
   name: 'bash',
   description: 'Execute bash commands in a secure environment',

@@ -23,10 +23,13 @@ export async function startRepl(): Promise<void> {
   let aiClient: AIClient | null = null;
   try {
     aiClient = new AIClient();
-    console.log('✅ AI client initialized successfully');
+    const provider = aiClient.getProvider();
+    const model = aiClient.getModel();
+    console.log(`✅ AI client initialized successfully (${provider}: ${model})`);
   } catch (error) {
-    console.log('⚠️  AI client not available - API key not configured');
-    console.log('   Set ANTHROPIC_API_KEY environment variable to enable AI features\n');
+    console.log('⚠️  AI client not available - API keys not configured');
+    console.log('   Set ANTHROPIC_API_KEY or OPENAI_API_KEY environment variables to enable AI features');
+    console.log('   Use AI_PROVIDER=anthropic or AI_PROVIDER=openai to choose your preferred provider\n');
   }
 
   // Initialize tool registry
@@ -72,7 +75,7 @@ export async function startRepl(): Promise<void> {
           console.error('❌ AI interaction failed:', error);
         }
       } else {
-        console.log('❌ AI client not available. Set ANTHROPIC_API_KEY to enable AI features.');
+        console.log('❌ AI client not available. Set ANTHROPIC_API_KEY or OPENAI_API_KEY to enable AI features.');
       }
       rl.prompt();
     }
@@ -97,6 +100,7 @@ async function handleReplCommand(command: string, rl: readline.Interface, prompt
       console.log('  /history  - Show command history');
       console.log('  /test     - Test AI connection');
       console.log('  /tools    - List available tools');
+      console.log('  /providers - Show AI provider status');
       console.log('\nOr just type your question/prompt for AI assistance\n');
       break;
 
@@ -126,6 +130,21 @@ async function handleReplCommand(command: string, rl: readline.Interface, prompt
         }
       } else {
               console.log('❌ AI client not available');
+    }
+    break;
+
+  case '/providers':
+    if (aiClient) {
+      const status = aiClient.getProviderStatus();
+      console.log('\nAI Provider Status:');
+      Object.entries(status).forEach(([provider, info]) => {
+        const status = info.configured ? '✅ Configured' : '❌ Not configured';
+        const model = info.model ? ` (${info.model})` : '';
+        console.log(`  ${provider}: ${status}${model}`);
+      });
+      console.log('');
+    } else {
+      console.log('❌ AI client not available');
     }
     break;
 
