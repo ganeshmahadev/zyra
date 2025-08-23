@@ -59,6 +59,7 @@ export async function startRepl(): Promise<void> {
 
     if (trimmedInput.startsWith('/')) {
       await handleReplCommand(trimmedInput, rl, promptManager, aiClient, toolRegistry);
+      rl.prompt();
     } else {
       // Handle AI interaction
       if (aiClient) {
@@ -66,13 +67,27 @@ export async function startRepl(): Promise<void> {
           promptManager.addUserMessage(trimmedInput);
           console.log('🤖 AI is thinking...');
           
+          // Set tool registry for AI client
+          aiClient.setToolRegistry(toolRegistry);
+          
           const messages = promptManager.getMessages();
-          const response = await aiClient.queryAI(messages);
+          
+          // Add timeout to prevent hanging
+          const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('AI response timeout')), 60000); // 60 second timeout
+          });
+          
+          const responsePromise = aiClient.queryAIWithTools(messages);
+          
+          const response = await Promise.race([responsePromise, timeoutPromise]) as string;
           
           promptManager.addAssistantMessage(response);
           console.log(`\n${response}\n`);
         } catch (error) {
           console.error('❌ AI interaction failed:', error);
+          if (error instanceof Error && error.message.includes('timeout')) {
+            console.log('💡 Try breaking your request into smaller parts or check your internet connection.');
+          }
         }
       } else {
         console.log('❌ AI client not available. Set ANTHROPIC_API_KEY or OPENAI_API_KEY to enable AI features.');

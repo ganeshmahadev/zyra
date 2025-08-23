@@ -81,4 +81,6 @@ export interface ToolRegistry {
   list: () => Tool[];
   /** Execute a tool with the given parameters */
   execute: (toolCall: ToolCall) => Promise<ToolOutput>;
+  /** Get formatted descriptions of all tools for AI consumption */
+  getToolDescriptions: () => string[];
 }
