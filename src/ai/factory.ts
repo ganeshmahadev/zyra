@@ -52,20 +52,46 @@ export class AIProviderFactoryImpl implements AIProviderFactory {
     return AIProviderFactoryImpl.AVAILABLE_MODELS[provider] || [];
   }
 
+  public getRecommendedModels(provider: AIProvider): string[] {
+    return this.getAvailableModels(provider);
+  }
+
   public getDefaultModel(provider: AIProvider): string {
     return AIProviderFactoryImpl.DEFAULT_MODELS[provider];
   }
 
-  public validateConfig(provider: AIProvider, config: AIModelConfig): boolean {
+  public validateConfig(provider: AIProvider, config: AIModelConfig, strictModelValidation: boolean = false): boolean {
     // Check if provider is supported
     if (!Object.keys(AIProviderFactoryImpl.AVAILABLE_MODELS).includes(provider)) {
       return false;
     }
 
-    // Check if model is available for the provider
-    const availableModels = this.getAvailableModels(provider);
-    if (!availableModels.includes(config.model)) {
-      return false;
+    // Check if model is available for the provider (only if strict validation is enabled)
+    if (strictModelValidation) {
+      const availableModels = this.getAvailableModels(provider);
+      if (!availableModels.includes(config.model)) {
+        return false;
+      }
+    } else {
+      // For flexible validation, just check that model name is reasonable
+      if (!config.model || config.model.trim().length === 0) {
+        return false;
+      }
+      
+      // Basic model name validation for each provider
+      if (provider === 'anthropic') {
+        // Claude models should start with 'claude'
+        if (!config.model.toLowerCase().startsWith('claude')) {
+          console.warn(`⚠️  Model '${config.model}' doesn't appear to be a Claude model. This may cause errors.`);
+        }
+      } else if (provider === 'openai') {
+        // OpenAI models should contain 'gpt' or common OpenAI naming
+        if (!config.model.toLowerCase().includes('gpt') && 
+            !config.model.toLowerCase().includes('davinci') && 
+            !config.model.toLowerCase().includes('text-')) {
+          console.warn(`⚠️  Model '${config.model}' doesn't appear to be an OpenAI model. This may cause errors.`);
+        }
+      }
     }
 
     // Check if required API key is set
@@ -102,7 +128,7 @@ export class AIProviderFactoryImpl implements AIProviderFactory {
       temperature,
     };
 
-    if (!this.validateConfig(provider, config)) {
+    if (!this.validateConfig(provider, config, false)) {
       throw new Error(`Invalid AI configuration for provider: ${provider}`);
     }
 

@@ -16,10 +16,14 @@ export class AIClient {
   private client: IAIClient;
   private factory: AIProviderFactoryImpl;
   private toolRegistry: ToolRegistry | null = null;
+  private currentProvider: AIProvider;
+  private currentModel: string;
 
   constructor() {
     this.factory = new AIProviderFactoryImpl();
     this.client = this.factory.createClientFromEnv();
+    this.currentProvider = this.client.getProvider();
+    this.currentModel = this.client.getModel();
   }
 
   public setToolRegistry(toolRegistry: ToolRegistry): void {
@@ -222,5 +226,59 @@ Always use tools for file operations, directory listings, searches, and terminal
 
   public getProviderStatus() {
     return this.factory.getProviderStatus();
+  }
+
+  /**
+   * Switch to a different AI provider
+   */
+  public switchProvider(provider: AIProvider, model?: string): boolean {
+    try {
+      const targetModel = model || this.factory.getDefaultModel(provider);
+      
+      const config = {
+        provider,
+        model: targetModel,
+        maxTokens: parseInt(process.env.AI_MAX_TOKENS || '4096'),
+        temperature: parseFloat(process.env.AI_TEMPERATURE || '0.7'),
+      };
+
+      if (!this.factory.validateConfig(provider, config, false)) {
+        return false;
+      }
+
+      const newClient = this.factory.createClient(provider, config);
+      this.client = newClient;
+      this.currentProvider = provider;
+      this.currentModel = targetModel;
+      
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  /**
+   * Get available models for a provider
+   */
+  public getAvailableModels(provider: AIProvider): string[] {
+    return this.factory.getAvailableModels(provider);
+  }
+
+  /**
+   * Get current provider and model info
+   */
+  public getCurrentConfig(): { provider: AIProvider; model: string } {
+    return {
+      provider: this.currentProvider,
+      model: this.currentModel,
+    };
+  }
+
+  /**
+   * Check if a provider is available (has API key configured)
+   */
+  public isProviderAvailable(provider: AIProvider): boolean {
+    const status = this.factory.getProviderStatus();
+    return status[provider].configured;
   }
 }

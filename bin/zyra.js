@@ -13,8 +13,18 @@ program
 program
   .command('repl')
   .description('Start interactive REPL session')
-  .action(async () => {
+  .option('-p, --provider <provider>', 'AI provider (anthropic/openai)')
+  .option('-m, --model <model>', 'AI model to use')
+  .action(async (options) => {
     try {
+      // Set environment variables if provider options are provided
+      if (options.provider) {
+        process.env.AI_PROVIDER = options.provider.toLowerCase();
+      }
+      if (options.model) {
+        process.env.AI_MODEL = options.model;
+      }
+      
       await startRepl();
     } catch (error) {
       console.error('Error starting REPL:', error);

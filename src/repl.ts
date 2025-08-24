@@ -23,9 +23,22 @@ export async function startRepl(): Promise<void> {
   let aiClient: AIClient | null = null;
   try {
     aiClient = new AIClient();
-    const provider = aiClient.getProvider();
-    const model = aiClient.getModel();
-    console.log(`✅ AI client initialized successfully (${provider}: ${model})`);
+    const currentConfig = aiClient.getCurrentConfig();
+    const status = aiClient.getProviderStatus();
+    
+    console.log(`✅ AI client initialized successfully`);
+    console.log(`🤖 Current: ${currentConfig.provider} (${currentConfig.model})`);
+    
+    // Show available providers
+    const availableProviders = Object.entries(status)
+      .filter(([_, info]) => info.configured)
+      .map(([provider, _]) => provider);
+    
+    if (availableProviders.length > 1) {
+      console.log(`🔄 Multiple providers available: ${availableProviders.join(', ')}`);
+      console.log(`   Use /switch <provider> to change providers`);
+    }
+    console.log(`   Use /models to see available models\n`);
   } catch (error) {
     console.log('⚠️  AI client not available - API keys not configured');
     console.log('   Set ANTHROPIC_API_KEY or OPENAI_API_KEY environment variables to enable AI features');
@@ -116,6 +129,9 @@ async function handleReplCommand(command: string, rl: readline.Interface, prompt
       console.log('  /test     - Test AI connection');
       console.log('  /tools    - List available tools');
       console.log('  /providers - Show AI provider status');
+      console.log('  /switch <provider> [model] - Switch AI provider (anthropic/openai)');
+      console.log('  /models [provider] - Show available models for provider');
+      console.log('  /current  - Show current AI provider and model');
       console.log('\nOr just type your question/prompt for AI assistance\n');
       break;
 
@@ -191,6 +207,87 @@ async function handleReplCommand(command: string, rl: readline.Interface, prompt
       }
       console.log('\nConversation Summary:');
       console.log(promptManager.getConversationSummary());
+      break;
+
+    case '/switch':
+      if (!aiClient) {
+        console.log('❌ AI client not available');
+        break;
+      }
+      
+      if (args.length === 0) {
+        console.log('Usage: /switch <provider> [model]');
+        console.log('Available providers: anthropic, openai');
+        break;
+      }
+
+      const targetProvider = args[0].toLowerCase() as 'anthropic' | 'openai';
+      const targetModel = args[1];
+
+      if (!['anthropic', 'openai'].includes(targetProvider)) {
+        console.log('❌ Invalid provider. Use: anthropic or openai');
+        break;
+      }
+
+      if (!aiClient.isProviderAvailable(targetProvider)) {
+        console.log(`❌ Provider '${targetProvider}' not available. Check your API key configuration.`);
+        break;
+      }
+
+      const switchSuccess = aiClient.switchProvider(targetProvider, targetModel);
+      if (switchSuccess) {
+        const currentConfig = aiClient.getCurrentConfig();
+        console.log(`✅ Switched to ${currentConfig.provider}: ${currentConfig.model}`);
+      } else {
+        console.log(`❌ Failed to switch to ${targetProvider}. Check your configuration.`);
+      }
+      break;
+
+    case '/models':
+      if (!aiClient) {
+        console.log('❌ AI client not available');
+        break;
+      }
+
+      const provider = args[0]?.toLowerCase() as 'anthropic' | 'openai' || null;
+      
+      if (provider && ['anthropic', 'openai'].includes(provider)) {
+        const models = aiClient.getAvailableModels(provider);
+        console.log(`\nRecommended models for ${provider}:`);
+        models.forEach(model => console.log(`  ✅ ${model}`));
+        console.log(`\n💡 You can also use any ${provider} model name, even if not listed above.`);
+        console.log(`   Example: /switch ${provider} your-custom-model-name`);
+        console.log('');
+      } else {
+        console.log('\nRecommended models by provider:');
+        console.log('\n🤖 Anthropic:');
+        aiClient.getAvailableModels('anthropic').forEach(model => console.log(`  ✅ ${model}`));
+        console.log('\n🤖 OpenAI:');
+        aiClient.getAvailableModels('openai').forEach(model => console.log(`  ✅ ${model}`));
+        console.log('\n💡 Custom Models: You can use any model name for each provider.');
+        console.log('   Zyra will attempt to use it and warn if it doesn\'t match expected patterns.');
+        console.log('\nUsage: /models [provider] to see models for specific provider\n');
+      }
+      break;
+
+    case '/current':
+      if (!aiClient) {
+        console.log('❌ AI client not available');
+        break;
+      }
+
+      const currentConfig = aiClient.getCurrentConfig();
+      console.log(`\nCurrent AI Configuration:`);
+      console.log(`  Provider: ${currentConfig.provider}`);
+      console.log(`  Model: ${currentConfig.model}`);
+      
+      const status = aiClient.getProviderStatus();
+      console.log(`\nProvider Status:`);
+      Object.entries(status).forEach(([prov, info]) => {
+        const indicator = info.configured ? '✅' : '❌';
+        console.log(`  ${prov}: ${indicator} ${info.configured ? 'Available' : 'Not configured'}`);
+      });
+      console.log('');
       break;
 
     default:
